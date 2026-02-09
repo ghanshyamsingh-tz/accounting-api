@@ -94,6 +94,20 @@ builder.Services.AddHealthChecks()
         name: "database",
         tags: new[] { "db", "postgresql" });
 
+// ============================================================================
+// Configure CORS for Angular frontend
+// ============================================================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularApp", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .WithExposedHeaders("X-Tenant-Id");
+    });
+});
+
 // Add services
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -282,6 +296,9 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+// CORS - must be before authentication and authorization
+app.UseCors("AllowAngularApp");
 
 // T144: Rate limiting
 // Temporarily disabled to isolate endpoint issues
