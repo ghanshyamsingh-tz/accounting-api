@@ -3,7 +3,7 @@ using Accounting.Domain.Enums;
 namespace Accounting.Application.Queries;
 
 public sealed record ListAccountsQuery(
-    AccountStatus? Status = null,
+    AccountStatus? Status = AccountStatus.Active,
     AccountType? Type = null,
     int Page = 1,
     int PageSize = 20

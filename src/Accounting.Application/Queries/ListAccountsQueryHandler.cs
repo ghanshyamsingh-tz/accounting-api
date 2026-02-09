@@ -32,7 +32,7 @@ public class ListAccountsQueryHandler
             query.Status, query.Type, query.Page, query.PageSize, _tenantId);
 
         try
-        {
+        {           
             var (accounts, totalCount) = await _accountRepository.ListAsync(
                 _tenantId,
                 query.Status,

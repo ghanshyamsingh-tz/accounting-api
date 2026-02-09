@@ -21,6 +21,12 @@ services:
       - accounting-network
     shm_size: 128mb
 
+  accounting.api:
+    image: ${DOCKER_REGISTRY-}accountingapi
+    build:
+      context: .
+      dockerfile: src/Accounting.API/Dockerfile
+
 volumes:
   postgres-data:
 
