@@ -27,7 +27,7 @@ public record GetInvoiceResponse(
 /// </summary>
 public record InvoiceLineItemDto(
     Guid LineItemId,
-    Guid RideId,
+    string RideId,
     DateTime RideDate,
     string Description,
     decimal Amount);

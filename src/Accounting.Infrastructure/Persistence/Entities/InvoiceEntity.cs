@@ -29,7 +29,7 @@ public class InvoiceLineItemEntity
 {
     public Guid Id { get; set; }
     public Guid InvoiceId { get; set; }
-    public Guid RideId { get; set; }
+    public string RideId { get; set; } = string.Empty;
     public DateTime RideDate { get; set; }
     public string Description { get; set; } = string.Empty;
     public decimal Amount { get; set; }

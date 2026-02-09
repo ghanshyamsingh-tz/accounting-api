@@ -188,8 +188,9 @@ namespace Accounting.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("ride_date");
 
-                    b.Property<Guid>("RideId")
-                        .HasColumnType("uuid")
+                    b.Property<string>("RideId")
+                        .IsRequired()
+                        .HasColumnType("text")
                         .HasColumnName("ride_id");
 
                     b.HasKey("Id")

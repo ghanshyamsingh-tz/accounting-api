@@ -44,7 +44,7 @@ public interface IInvoiceRepository
     /// <summary>
     /// Gets ride IDs that have been invoiced for an account in a billing period
     /// </summary>
-    Task<List<Guid>> GetInvoicedRideIdsAsync(
+    Task<List<string>> GetInvoicedRideIdsAsync(
         Guid accountId,
         Guid tenantId,
         DateTime billingPeriodStart,

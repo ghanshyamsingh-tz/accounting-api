@@ -89,7 +89,7 @@ public sealed class Invoice
     /// Adds a line item to the invoice and recalculates total
     /// </summary>
     public void AddLineItem(
-        Guid rideId,
+        string rideId,
         DateTime rideDate,
         string description,
         Money amount)
@@ -126,7 +126,7 @@ public sealed class InvoiceLineItem
 {
     public Guid Id { get; private set; }
     public Guid InvoiceId { get; private set; }
-    public Guid RideId { get; private set; }
+    public string RideId { get; private set; } = string.Empty;
     public DateTime RideDate { get; private set; }
     public string Description { get; private set; } = string.Empty;
     public Money Amount { get; private set; }
@@ -136,7 +136,7 @@ public sealed class InvoiceLineItem
     internal InvoiceLineItem(
         Guid id,
         Guid invoiceId,
-        Guid rideId,
+        string rideId,
         DateTime rideDate,
         string description,
         Money amount)

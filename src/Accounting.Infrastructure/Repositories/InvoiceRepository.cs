@@ -101,7 +101,7 @@ public class InvoiceRepository : IInvoiceRepository
             .AnyAsync(i => i.InvoiceNumber == invoiceNumber, cancellationToken);
     }
 
-    public async Task<List<Guid>> GetInvoicedRideIdsAsync(
+    public async Task<List<string>> GetInvoicedRideIdsAsync(
         Guid accountId,
         Guid tenantId,
         DateTime billingPeriodStart,

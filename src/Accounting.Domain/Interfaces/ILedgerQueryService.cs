@@ -13,7 +13,7 @@ public interface ILedgerQueryService
         Guid tenantId,
         DateTime billingPeriodStart,
         DateTime billingPeriodEnd,
-        List<Guid> excludeRideIds,
+        List<string> excludeRideIds,
         CancellationToken cancellationToken);
 }
 
@@ -21,7 +21,7 @@ public interface ILedgerQueryService
 /// DTO for ride charge details
 /// </summary>
 public record RideChargeDto(
-    Guid RideId,
+    string RideId,
     DateTime RideDate,
     string Description,
     decimal Amount);

@@ -22,7 +22,7 @@ public class LedgerQueryService : ILedgerQueryService
         Guid tenantId,
         DateTime billingPeriodStart,
         DateTime billingPeriodEnd,
-        List<Guid> excludeRideIds,
+        List<string> excludeRideIds,
         CancellationToken cancellationToken)
     {
         var rideCharges = await _dbContext.LedgerEntries
@@ -32,7 +32,7 @@ public class LedgerQueryService : ILedgerQueryService
             .Where(e => e.CreatedAt >= billingPeriodStart && e.CreatedAt < billingPeriodEnd)
             .Where(e => e.DebitAmount > 0) // Only debit entries (charges to AR account)
             .Select(e => new RideChargeDto(
-                Guid.Parse(e.SourceReferenceId),
+                e.SourceReferenceId,
                 e.CreatedAt,
                 e.Description ?? "Ride charge",
                 e.DebitAmount))

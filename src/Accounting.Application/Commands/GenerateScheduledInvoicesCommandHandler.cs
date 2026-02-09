@@ -86,7 +86,7 @@ public class GenerateScheduledInvoicesCommandHandler
                         _tenantId,
                         periodStart,
                         periodEnd,
-                        new List<Guid>(), // No exclusions for scheduled generation
+                        new List<string>(), // No exclusions for scheduled generation
                         cancellationToken);
 
                     if (!unbilledCharges.Any())
