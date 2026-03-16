@@ -1,0 +1,581 @@
+openapi: 3.0.3
+info:
+  title: Identity Service API
+  description: |
+    User authentication and login notification system for NEMT Accounting platform.
+    
+    ## Authentication
+    All endpoints except registration and login require a valid JWT Bearer token in the Authorization header.
+    
+    ## Rate Limiting
+    - Authentication endpoints: 5 requests per 10 seconds per IP
+    - Other endpoints: 100 requests per minute per user
+    
+    ## Error Responses
+    All errors follow RFC 9457 Problem Details format.
+  version: 1.0.0
+  contact:
+    name: NEMT Accounting Team
+    email: support@nemtaccounting.example.com
+
+servers:
+  - url: https://api.nemtaccounting.example.com/identity/v1
+    description: Production
+  - url: https://staging-api.nemtaccounting.example.com/identity/v1
+    description: Staging
+  - url: http://localhost:5001/identity/v1
+    description: Local Development
+
+tags:
+  - name: Authentication
+    description: User login and token management
+  - name: Accounts
+    description: User account registration and management
+  - name: LoginHistory
+    description: Login attempt tracking and security monitoring
+  - name: Notifications
+    description: Notification preference management
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Accounts
+      summary: Register new user account
+      description: Creates a new user account with email/password credentials. Sends verification email.
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+            examples:
+              validRegistration:
+                value:
+                  email: john.doe@example.com
+                  password: SecurePass123!
+                  firstName: John
+                  lastName: Doe
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterUserResponse'
+        '400':
+          description: Invalid input or validation error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+              examples:
+                invalidEmail:
+                  value:
+                    type: https://api.nemtaccounting.example.com/problems/validation-error
+                    title: Validation Error
+                    status: 400
+                    detail: Invalid email address format
+                    instance: /auth/register
+                    errors:
+                      email: ["Email address is not in valid format"]
+        '409':
+          description: Email already exists
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user
+      description: Authenticates user credentials and returns JWT access token. Records login attempt.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials or account locked
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '429':
+          description: Too many login attempts
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Issues new access token using valid refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /accounts/me:
+    get:
+      tags:
+        - Accounts
+      summary: Get current user profile
+      description: Returns profile information for authenticated user
+      operationId: getUserProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags:
+        - Accounts
+      summary: Update user profile
+      description: Updates profile information for authenticated user
+      operationId: updateUserProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /accounts/me/login-history:
+    get:
+      tags:
+        - LoginHistory
+      summary: Get login history
+      description: Returns paginated list of login attempts for authenticated user
+      operationId: getLoginHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          description: Filter by attempt status
+          schema:
+            type: string
+            enum: [Success, Failure]
+      responses:
+        '200':
+          description: Login history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginHistoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /accounts/me/security-events:
+    get:
+      tags:
+        - LoginHistory
+      summary: Get security events
+      description: Returns security events for authenticated user
+      operationId: getSecurityEvents
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Security events retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityEventsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /accounts/me/notifications/preferences:
+    get:
+      tags:
+        - Notifications
+      summary: Get notification preferences
+      description: Returns notification settings for authenticated user
+      operationId: getNotificationPreferences
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferencesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags:
+        - Notifications
+      summary: Update notification preferences
+      description: Updates notification settings for authenticated user
+      operationId: updateNotificationPreferences
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotificationPreferencesRequest'
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferencesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterUserRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 100
+          description: Must contain uppercase, lowercase, and numbers
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    RegisterUserResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        message:
+          type: string
+          example: Registration successful. Please check your email to verify your account.
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token (expires in 15 minutes)
+        refreshToken:
+          type: string
+          description: Refresh token (expires in 7 days)
+        expiresIn:
+          type: integer
+          description: Access token expiration in seconds
+          example: 900
+        tokenType:
+          type: string
+          example: Bearer
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    UserProfileResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        accountStatus:
+          type: string
+          enum: [PendingVerification, Active, Locked, Suspended, Closed]
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    LoginHistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoginAttemptDto'
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalCount:
+          type: integer
+        hasNextPage:
+          type: boolean
+
+    LoginAttemptDto:
+      type: object
+      properties:
+        attemptId:
+          type: string
+          format: uuid
+        attemptedAt:
+          type: string
+          format: date-time
+        ipAddress:
+          type: string
+        location:
+          type: string
+          example: "San Francisco, USA"
+        device:
+          type: string
+          example: "Chrome on Windows"
+        status:
+          type: string
+          enum: [Success, Failure]
+        failureReason:
+          type: string
+          enum: [InvalidCredentials, AccountLocked, AccountNotFound, EmailNotVerified, TooManyAttempts]
+          nullable: true
+
+    SecurityEventsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecurityEventDto'
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalCount:
+          type: integer
+        hasNextPage:
+          type: boolean
+
+    SecurityEventDto:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        threatType:
+          type: string
+          enum: [BruteForce, GeographicAnomaly, VelocityAnomaly, KnownBadActor, CredentialStuffing, AccountTakeover]
+        severity:
+          type: string
+          enum: [Low, Medium, High, Critical]
+        description:
+          type: string
+        resolved:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    NotificationPreferencesResponse:
+      type: object
+      properties:
+        emailEnabled:
+          type: boolean
+        smsEnabled:
+          type: boolean
+        inAppEnabled:
+          type: boolean
+        frequency:
+          type: string
+          enum: [Immediate, Hourly, Daily]
+
+    UpdateNotificationPreferencesRequest:
+      type: object
+      properties:
+        emailEnabled:
+          type: boolean
+        smsEnabled:
+          type: boolean
+        inAppEnabled:
+          type: boolean
+        frequency:
+          type: string
+          enum: [Immediate, Hourly, Daily]
+
+    ProblemDetails:
+      type: object
+      description: RFC 9457 Problem Details
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI reference that identifies the problem type
+        title:
+          type: string
+          description: Short human-readable summary
+        status:
+          type: integer
+          description: HTTP status code
+        detail:
+          type: string
+          description: Human-readable explanation specific to this occurrence
+        instance:
+          type: string
+          format: uri
+          description: URI reference that identifies the specific occurrence
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Validation errors by field
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - invalid or missing JWT token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'

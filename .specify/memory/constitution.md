@@ -80,7 +80,7 @@ Follow-up TODOs:
 - No shared databases between services
 - Each context has its own ubiquitous language
 
-**Rationale**: Clean Architecture ensures maintainability, testability, and independent deployability. DDD aligns technical implementation with business domain. This separation of concerns prevents coupling that would impede scaling and evolution.
+**Rationale**: Clean Architecture ensures maintainability, testability, and independent deployability. DDD aligns technical implementation with business domain. This separation of concerns prevents coupling that would impede scaling and evolution. Component-based organization (via bounded contexts) provides clear module boundaries similar to microservices architecture.
 
 ### III. Test-First Development (NON-NEGOTIABLE)
 
@@ -169,7 +169,7 @@ Follow-up TODOs:
 - Controllers map Result errors to HTTP status codes
 - Global exception middleware handles only infrastructure exceptions
 
-**Rationale**: The Result pattern makes error handling explicit in the type system, preventing unhandled exceptions and improving API contracts. Exceptions are reserved for truly exceptional circumstances, not business logic flow control.
+**Rationale**: The Result pattern makes error handling explicit in the type system, preventing unhandled exceptions and improving API contracts. This provides centralized error handling semantics—all business errors flow through the same Result pattern, while infrastructure exceptions are handled by global middleware. Exceptions are reserved for truly exceptional circumstances, not business logic flow control.
 
 ### VII. PostgreSQL & EF Core Standards (NON-NEGOTIABLE)
 
@@ -244,6 +244,13 @@ Follow-up TODOs:
 - `Directory.Packages.props` for centralized package versions
 - XML documentation REQUIRED on ALL members (public, private, protected, internal)
 - NO `#pragma warning disable` inline—ALL suppressions in `GlobalSuppressions.cs` with justification
+
+**Code Style Rules** (NON-NEGOTIABLE):
+- **No Magic Strings**: All string constants MUST be defined in dedicated Constants classes or configuration
+- **Prefer Immutability**: Use `readonly` fields, `const` for compile-time constants, `record` types where appropriate
+- **Single Responsibility**: Every class, method, and function must do ONE thing well
+- **Small Methods**: Methods should be concise and focused (prefer <20 lines)
+- **Explicit Dependencies**: Constructor injection only; no service locator pattern
 
 **Architecture Guardrails** (Hard Rules):
 - [ ] **Domain Layer**: No reference to Infrastructure or Presentation; No EF Core, HTTP, or cloud SDK dependencies; No public setters
